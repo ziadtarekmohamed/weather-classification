@@ -7,7 +7,6 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-# -- Config ------------------------------------------------------------------
 BASE_DIR   = Path(r"C:\Users\h\Documents\Weatherimg")
 DATA_DIR   = BASE_DIR / "data"
 TRAIN_DIR  = DATA_DIR / "train"
@@ -20,7 +19,6 @@ EPOCHS     = 25
 NUM_CLASSES = 5
 SEED        = 42
 
-# -- Data generators ---------------------------------------------------------
 train_gen = ImageDataGenerator(
     rescale=1.0 / 255,
     rotation_range=20,
@@ -106,7 +104,6 @@ callbacks = [
     ),
 ]
 
-# -- Training ----------------------------------------------------------------
 history = model.fit(
     train_ds,
     validation_data=val_ds,
