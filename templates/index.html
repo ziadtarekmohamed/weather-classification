@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Image Classifier</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Weather Image Classifier</h1>
+        <p class="subtitle">Upload a sky photo to classify the weather condition</p>
+
+        <div class="upload-area" id="uploadArea">
+            <p>Drag and drop an image here or click to select</p>
+            <input type="file" id="fileInput" accept="image/*" hidden>
+        </div>
+
+        <div class="preview-section" id="previewSection" style="display:none;">
+            <img id="previewImage" alt="Uploaded image preview">
+            <button id="classifyBtn">Classify</button>
+        </div>
+
+        <div class="result-section" id="resultSection" style="display:none;">
+            <h2>Result</h2>
+            <div class="prediction-label" id="predictionLabel"></div>
+            <div class="confidence" id="confidence"></div>
+
+            <h3>All Probabilities</h3>
+            <div class="bars" id="bars"></div>
+        </div>
+
+        <div class="loading" id="loading" style="display:none;">
+            <p>Classifying...</p>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById("uploadArea");
+        const fileInput = document.getElementById("fileInput");
+        const previewSection = document.getElementById("previewSection");
+        const previewImage = document.getElementById("previewImage");
+        const classifyBtn = document.getElementById("classifyBtn");
+        const resultSection = document.getElementById("resultSection");
+        const predictionLabel = document.getElementById("predictionLabel");
+        const confidenceEl = document.getElementById("confidence");
+        const barsEl = document.getElementById("bars");
+        const loading = document.getElementById("loading");
+
+        let selectedFile = null;
+
+        // Click to open file picker
+        uploadArea.addEventListener("click", () => fileInput.click());
+
+        // Drag and drop
+        uploadArea.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            uploadArea.classList.add("dragover");
+        });
+        uploadArea.addEventListener("dragleave", () => {
+            uploadArea.classList.remove("dragover");
+        });
+        uploadArea.addEventListener("drop", (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove("dragover");
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length > 0) {
+                handleFile(fileInput.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                previewSection.style.display = "block";
+                resultSection.style.display = "none";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        classifyBtn.addEventListener("click", async () => {
+            if (!selectedFile) return;
+
+            loading.style.display = "block";
+            resultSection.style.display = "none";
+            classifyBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    body: formData,
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    alert("Error: " + data.error);
+                    return;
+                }
+
+                predictionLabel.textContent = data.prediction.toUpperCase();
+                confidenceEl.textContent = data.confidence + "% confidence";
+
+                barsEl.innerHTML = "";
+                data.results.forEach((r) => {
+                    const row = document.createElement("div");
+                    row.className = "bar-row" + (r.is_top ? " top" : "");
+                    row.innerHTML = `
+                        <span class="bar-label">${r.class}</span>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:${r.probability}%"></div>
+                        </div>
+                        <span class="bar-pct">${r.probability}%</span>
+                    `;
+                    barsEl.appendChild(row);
+                });
+
+                resultSection.style.display = "block";
+            } catch (err) {
+                alert("Request failed: " + err.message);
+            } finally {
+                loading.style.display = "none";
+                classifyBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
