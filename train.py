@@ -1,5 +1,3 @@
-
-
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -51,7 +49,6 @@ val_ds = val_gen.flow_from_directory(
     seed=SEED,
 )
 
-# -- Model -------------------------------------------------------------------
 def build_model() -> keras.Model:
     model = keras.Sequential([
         layers.Conv2D(32, (3, 3), activation="relu",

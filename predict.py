@@ -1,28 +1,14 @@
-"""
-predict.py
-----------
-CLI prediction for a single image.
-
-Usage:
-  python predict.py <path_to_image>
-
-Example:
-  python predict.py C:/Users/h/Downloads/sky.jpg
-"""
-
 import sys
 import numpy as np
 from pathlib import Path
 from tensorflow import keras
 from tensorflow.keras.preprocessing import image as keras_image
 
-# -- Config ------------------------------------------------------------------
 BASE_DIR   = Path(r"C:\Users\h\Documents\Weatherimg")
 MODEL_PATH = BASE_DIR / "weather_model.h5"
 IMG_SIZE   = (150, 150)
 CLASSES    = ["cloudy", "foggy", "rainy", "shine", "sunrise"]
 
-# -- Load model --------------------------------------------------------------
 if not MODEL_PATH.exists():
     print(f"Error: Model not found at {MODEL_PATH}")
     print("Please run train.py first.")
@@ -30,7 +16,6 @@ if not MODEL_PATH.exists():
 
 model = keras.models.load_model(str(MODEL_PATH))
 
-# -- Predict -----------------------------------------------------------------
 def predict(img_path: str) -> None:
     path = Path(img_path)
     if not path.exists():
