@@ -1,10 +1,9 @@
 import sys
 import numpy as np
 from pathlib import Path
-from tensorflow import keras
-from tensorflow.keras.preprocessing import image as keras_image
+import keras
 
-BASE_DIR   = Path(r"C:\Users\h\Documents\Weatherimg")
+BASE_DIR   = Path(r"C:\Users\youss\Weatherimg")
 MODEL_PATH = BASE_DIR / "weather_model.h5"
 IMG_SIZE   = (150, 150)
 CLASSES    = ["cloudy", "foggy", "rainy", "shine", "sunrise"]
@@ -22,8 +21,8 @@ def predict(img_path: str) -> None:
         print(f"Error: Image not found: {img_path}")
         sys.exit(1)
 
-    img = keras_image.load_img(str(path), target_size=IMG_SIZE)
-    arr = keras_image.img_to_array(img) / 255.0
+    img = keras.utils.load_img(str(path), target_size=IMG_SIZE)
+    arr = keras.utils.img_to_array(img) / 255.0
     arr = np.expand_dims(arr, axis=0)
 
     probs = model.predict(arr, verbose=0)[0]
