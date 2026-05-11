@@ -15,7 +15,7 @@ TL_MODEL         = BASE_DIR / "weather_model_tl.h5"
 
 # Each model requires a different input size
 SCRATCH_IMG_SIZE = (150, 150)
-TL_IMG_SIZE      = (224, 224)
+TL_IMG_SIZE = (150, 150)
 
 CLASSES = ["cloudy", "foggy", "rainy", "shine", "sunrise"]
 
