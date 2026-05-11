@@ -11,6 +11,15 @@ venv/
 # Dataset (too large for GitHub)
 data/
 
+# Visualizations and artifacts
+*.png
+*.jpg
+*.jpeg
+
+# Metrics and logs
+*_metrics.json
+accuracy_results/
+
 # IDE
 .vscode/
 .idea/

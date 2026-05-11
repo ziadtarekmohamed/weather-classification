@@ -3,84 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Weather image classification using a custom CNN and MobileNetV2 transfer learning.">
     <title>Weather Image Classifier</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f5;
+            color: #1a1a1a;
+            padding: 40px 20px 60px;
+            min-height: 100vh;
+        }
+
+        /* Page header */
+        header {
+            max-width: 900px;
+            margin: 0 auto 36px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 20px;
+        }
+        header h1 {
+            font-size: 1.55rem;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 6px;
+        }
+        header p {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        /* Upload section */
+        .upload-section {
+            max-width: 540px;
+            margin: 0 auto 36px;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 28px;
+        }
+
+        .upload-area {
+            border: 1.5px dashed #aaa;
+            border-radius: 4px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            color: #777;
+            font-size: 0.875rem;
+            transition: border-color 0.15s, background-color 0.15s;
+        }
+        .upload-area:hover,
+        .upload-area.over {
+            border-color: #555;
+            background-color: #fafafa;
+        }
+
+        .preview-area {
+            display: none;
+            margin-top: 18px;
+            text-align: center;
+        }
+        .preview-area img {
+            max-height: 240px;
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            object-fit: contain;
+        }
+
+        .btn-classify {
+            display: none;
+            width: 100%;
+            margin-top: 14px;
+            padding: 10px 0;
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            letter-spacing: 0.01em;
+            transition: background 0.15s;
+        }
+        .btn-classify:hover:not(:disabled) {
+            background: #333;
+        }
+        .btn-classify:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .status-line {
+            display: none;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #888;
+            text-align: center;
+        }
+
+        /* Results */
+        .results-section {
+            display: none;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .results-section h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 18px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 620px) {
+            .results-grid { grid-template-columns: 1fr; }
+        }
+
+        .model-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 22px;
+        }
+
+        .model-card-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .model-card-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 18px;
+        }
+
+        .pred-class {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 2px;
+            text-transform: capitalize;
+        }
+
+        .pred-confidence {
+            font-size: 0.82rem;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .bars-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .bar-label {
+            width: 58px;
+            font-size: 0.78rem;
+            color: #777;
+            text-align: right;
+            flex-shrink: 0;
+            text-transform: capitalize;
+        }
+        .bar-row.top .bar-label {
+            color: #111;
+            font-weight: 500;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 7px;
+            background: #eeeeee;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            width: 0;
+            transition: width 0.4s ease;
+            background: #cccccc;
+        }
+        .bar-row.top .bar-fill {
+            background: #1a1a1a;
+        }
+
+        .bar-pct {
+            width: 38px;
+            font-size: 0.75rem;
+            color: #aaa;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .bar-row.top .bar-pct {
+            color: #444;
+        }
+
+        .error-box {
+            font-size: 0.82rem;
+            color: #b00020;
+            background: #fff5f5;
+            border: 1px solid #fcc;
+            border-radius: 4px;
+            padding: 10px 14px;
+        }
+
+        /* Tag for model type */
+        .tag {
+            display: inline-block;
+            font-size: 0.68rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 3px;
+            margin-bottom: 10px;
+        }
+        .tag-scratch {
+            background: #eef2ff;
+            color: #4338ca;
+            border: 1px solid #c7d2fe;
+        }
+        .tag-tl {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Weather Image Classifier</h1>
-        <p class="subtitle">Upload a sky photo to classify the weather condition</p>
 
+    <header>
+        <h1>Weather Image Classifier</h1>
+        <p>Upload a sky photograph to classify the weather condition using two models: a CNN trained from scratch and a MobileNetV2 transfer learning model.</p>
+    </header>
+
+    <div class="upload-section">
         <div class="upload-area" id="uploadArea">
-            <p>Drag and drop an image here or click to select</p>
+            <p>Drag and drop an image here, or click to browse</p>
             <input type="file" id="fileInput" accept="image/*" hidden>
         </div>
 
-        <div class="preview-section" id="previewSection" style="display:none;">
-            <img id="previewImage" alt="Uploaded image preview">
-            <button id="classifyBtn">Classify</button>
+        <div class="preview-area" id="previewArea">
+            <img id="previewImg" alt="Selected image">
         </div>
 
-        <div class="result-section" id="resultSection" style="display:none;">
-            <h2>Result</h2>
-            <div class="prediction-label" id="predictionLabel"></div>
-            <div class="confidence" id="confidence"></div>
+        <button class="btn-classify" id="classifyBtn">Run classification</button>
+        <div class="status-line" id="statusLine">Classifying, please wait...</div>
+    </div>
 
-            <h3>All Probabilities</h3>
-            <div class="bars" id="bars"></div>
-        </div>
-
-        <div class="loading" id="loading" style="display:none;">
-            <p>Classifying...</p>
+    <div class="results-section" id="resultsSection">
+        <h2>Results</h2>
+        <div class="results-grid">
+            <div class="model-card" id="cardScratch">
+                <div class="tag tag-scratch">From Scratch</div>
+                <div class="model-card-name">Custom CNN</div>
+                <div id="contentScratch"></div>
+            </div>
+            <div class="model-card" id="cardTL">
+                <div class="tag tag-tl">Transfer Learning</div>
+                <div class="model-card-name">MobileNetV2</div>
+                <div id="contentTL"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        const uploadArea = document.getElementById("uploadArea");
-        const fileInput = document.getElementById("fileInput");
-        const previewSection = document.getElementById("previewSection");
-        const previewImage = document.getElementById("previewImage");
-        const classifyBtn = document.getElementById("classifyBtn");
-        const resultSection = document.getElementById("resultSection");
-        const predictionLabel = document.getElementById("predictionLabel");
-        const confidenceEl = document.getElementById("confidence");
-        const barsEl = document.getElementById("bars");
-        const loading = document.getElementById("loading");
+        const uploadArea   = document.getElementById("uploadArea");
+        const fileInput    = document.getElementById("fileInput");
+        const previewArea  = document.getElementById("previewArea");
+        const previewImg   = document.getElementById("previewImg");
+        const classifyBtn  = document.getElementById("classifyBtn");
+        const statusLine   = document.getElementById("statusLine");
+        const resultsSection = document.getElementById("resultsSection");
 
         let selectedFile = null;
 
-        // Click to open file picker
         uploadArea.addEventListener("click", () => fileInput.click());
 
-        // Drag and drop
-        uploadArea.addEventListener("dragover", (e) => {
+        uploadArea.addEventListener("dragover", e => {
             e.preventDefault();
-            uploadArea.classList.add("dragover");
+            uploadArea.classList.add("over");
         });
-        uploadArea.addEventListener("dragleave", () => {
-            uploadArea.classList.remove("dragover");
-        });
-        uploadArea.addEventListener("drop", (e) => {
+        uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("over"));
+        uploadArea.addEventListener("drop", e => {
             e.preventDefault();
-            uploadArea.classList.remove("dragover");
-            if (e.dataTransfer.files.length > 0) {
-                handleFile(e.dataTransfer.files[0]);
-            }
+            uploadArea.classList.remove("over");
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
         });
-
         fileInput.addEventListener("change", () => {
-            if (fileInput.files.length > 0) {
-                handleFile(fileInput.files[0]);
-            }
+            if (fileInput.files.length) handleFile(fileInput.files[0]);
         });
 
         function handleFile(file) {
             selectedFile = file;
             const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImage.src = e.target.result;
-                previewSection.style.display = "block";
-                resultSection.style.display = "none";
+            reader.onload = e => {
+                previewImg.src = e.target.result;
+                previewArea.style.display = "block";
+                classifyBtn.style.display = "block";
+                resultsSection.style.display = "none";
             };
             reader.readAsDataURL(file);
         }
@@ -88,50 +342,64 @@
         classifyBtn.addEventListener("click", async () => {
             if (!selectedFile) return;
 
-            loading.style.display = "block";
-            resultSection.style.display = "none";
-            classifyBtn.disabled = true;
+            classifyBtn.disabled   = true;
+            statusLine.style.display = "block";
+            resultsSection.style.display = "none";
 
-            const formData = new FormData();
-            formData.append("file", selectedFile);
+            const fd = new FormData();
+            fd.append("file", selectedFile);
 
             try {
-                const response = await fetch("/predict", {
-                    method: "POST",
-                    body: formData,
-                });
-                const data = await response.json();
+                const resp = await fetch("/predict", { method: "POST", body: fd });
+                const data = await resp.json();
 
                 if (data.error) {
                     alert("Error: " + data.error);
                     return;
                 }
 
-                predictionLabel.textContent = data.prediction.toUpperCase();
-                confidenceEl.textContent = data.confidence + "% confidence";
+                renderCard(document.getElementById("contentScratch"), data.scratch,  "scratch");
+                renderCard(document.getElementById("contentTL"),      data.transfer, "tl");
+                resultsSection.style.display = "block";
 
-                barsEl.innerHTML = "";
-                data.results.forEach((r) => {
-                    const row = document.createElement("div");
-                    row.className = "bar-row" + (r.is_top ? " top" : "");
-                    row.innerHTML = `
-                        <span class="bar-label">${r.class}</span>
-                        <div class="bar-track">
-                            <div class="bar-fill" style="width:${r.probability}%"></div>
-                        </div>
-                        <span class="bar-pct">${r.probability}%</span>
-                    `;
-                    barsEl.appendChild(row);
-                });
-
-                resultSection.style.display = "block";
             } catch (err) {
                 alert("Request failed: " + err.message);
             } finally {
-                loading.style.display = "none";
-                classifyBtn.disabled = false;
+                classifyBtn.disabled    = false;
+                statusLine.style.display = "none";
             }
         });
+
+        function renderCard(container, data, type) {
+            if (!data || data.error) {
+                container.innerHTML = `<div class="error-box">${data ? data.error : "No data returned."}</div>`;
+                return;
+            }
+
+            const bars = data.results.map(r => {
+                const topCls = r.is_top ? " top" : "";
+                return `
+                    <div class="bar-row${topCls}">
+                        <span class="bar-label">${r.class}</span>
+                        <div class="bar-track">
+                            <div class="bar-fill" data-w="${r.probability}"></div>
+                        </div>
+                        <span class="bar-pct">${r.probability}%</span>
+                    </div>`;
+            }).join("");
+
+            container.innerHTML = `
+                <div class="pred-class">${data.prediction}</div>
+                <div class="pred-confidence">${data.confidence}% confidence</div>
+                <div class="bars-title">Class probabilities</div>
+                ${bars}`;
+
+            requestAnimationFrame(() => {
+                container.querySelectorAll(".bar-fill[data-w]").forEach(el => {
+                    el.style.width = el.dataset.w + "%";
+                });
+            });
+        }
     </script>
 </body>
 </html>
